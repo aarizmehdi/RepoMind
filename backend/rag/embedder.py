@@ -23,27 +23,34 @@ def embed(texts: list[str]) -> list[list[float]]:
     if not hf_token:
         raise RuntimeError("HUGGINGFACE_API_KEY environment variable is missing. Add it to Render!")
 
+    import time
+
     headers = {"Authorization": f"Bearer {hf_token}"}
     payload = {"inputs": texts, "options": {"wait_for_model": True}}
 
-    try:
-        with httpx.Client(timeout=60.0) as client:
-            response = client.post(_HF_API_URL, headers=headers, json=payload)
-            response.raise_for_status()
-            embeddings = response.json()
-            
-            # Hugging Face feature-extraction returns a list of floats for a single string, 
-            # and a list of lists of floats for a list of strings.
-            if not isinstance(embeddings, list):
-                raise RuntimeError(f"Unexpected HF response: {embeddings}")
-            
-            # If a single string was passed, wrap it back in a list so the return type is consistent
-            if isinstance(embeddings[0], float):
-                return [embeddings]
-            
-            return embeddings
-    except Exception as e:
-        raise RuntimeError(f"HuggingFace embedding failed: {e}")
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            with httpx.Client(timeout=60.0) as client:
+                response = client.post(_HF_API_URL, headers=headers, json=payload)
+                if response.status_code == 503:
+                    # Model loading, wait and retry
+                    time.sleep(2 ** attempt)
+                    continue
+                response.raise_for_status()
+                embeddings = response.json()
+                
+                if not isinstance(embeddings, list):
+                    raise RuntimeError(f"Unexpected HF response: {embeddings}")
+                
+                if isinstance(embeddings[0], float):
+                    return [embeddings]
+                
+                return embeddings
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise RuntimeError(f"HuggingFace embedding failed after {max_retries} attempts: {e}")
+            time.sleep(2 ** attempt)
 
 
 def embed_single(text: str) -> list[float]:

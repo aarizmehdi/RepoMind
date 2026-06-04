@@ -71,8 +71,8 @@ _SUPPORTED_EXTENSIONS: frozenset[str] = frozenset({
     ".lua", ".r", ".m", ".ex", ".exs",
 })
 
-# Pinecone upsert batch size.
-_UPSERT_BATCH_SIZE: int = 100
+# Pinecone upsert batch size. Lowered to 16 to avoid HuggingFace Serverless API payload limits.
+_UPSERT_BATCH_SIZE: int = 16
 
 # GitHub REST API base URL.
 _GITHUB_API_BASE: str = "https://api.github.com"
