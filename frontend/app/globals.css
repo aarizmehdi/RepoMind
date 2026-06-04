@@ -1,0 +1,309 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+
+/* ============================================================
+   Design System — Three colors only, no exceptions.
+   ============================================================ */
+:root {
+  --canvas:       #000000;
+  --surface:      #0a0a0a;
+  --surface-2:    #141414;
+  --text:         #f4f4f5;
+  --accent:       #fafafa;
+  --accent-glow:  rgba(255, 255, 255, 0.12);
+  --font-sans:    "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono:    "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+}
+
+/* ============================================================
+   Base reset
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   Scrollbar styling (Webkit)
+   ============================================================ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 12%, transparent); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 22%, transparent); }
+
+/* ============================================================
+   Selection color
+   ============================================================ */
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* ============================================================
+   Focus rings
+   ============================================================ */
+:focus-visible {
+  outline: 1.5px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Utility classes
+   ============================================================ */
+.bg-canvas  { background-color: var(--canvas); }
+.bg-surface { background-color: var(--surface); }
+.text-base  { color: var(--text); }
+.text-muted { color: color-mix(in srgb, var(--text) 45%, transparent); }
+.text-dim   { color: color-mix(in srgb, var(--text) 25%, transparent); }
+.border-surface { border-color: var(--surface); }
+.border-surface-2 { border-color: color-mix(in srgb, var(--text) 10%, transparent); }
+
+.panel {
+  background-color: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--text) 8%, transparent);
+  border-radius: 12px;
+}
+
+input, textarea, button { font-family: inherit; font-size: inherit; }
+
+/* ============================================================
+   Markdown prose overrides (for AI chat messages)
+   ============================================================ */
+.prose-chat {
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.8;
+  word-break: break-word;
+}
+.prose-chat h1, .prose-chat h2, .prose-chat h3, .prose-chat h4 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  color: var(--text);
+}
+.prose-chat h2 { font-size: 1.05em; }
+.prose-chat h3 { font-size: 0.95em; }
+.prose-chat p  { margin-bottom: 0.75em; }
+.prose-chat p:last-child { margin-bottom: 0; }
+.prose-chat ul, .prose-chat ol { padding-left: 1.4em; margin-bottom: 0.75em; }
+.prose-chat li { margin-bottom: 0.25em; }
+.prose-chat strong { font-weight: 600; color: var(--text); }
+.prose-chat em    { font-style: italic; color: color-mix(in srgb, var(--text) 80%, transparent); }
+.prose-chat a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.prose-chat blockquote {
+  border-left: 3px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  padding-left: 0.85em;
+  margin: 0.75em 0;
+  color: color-mix(in srgb, var(--text) 65%, transparent);
+  font-style: italic;
+}
+.prose-chat table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 0.75em 0;
+}
+.prose-chat th, .prose-chat td {
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  padding: 6px 12px;
+  text-align: left;
+}
+.prose-chat th {
+  background: var(--surface-2);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.prose-chat tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+}
+.prose-chat :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
+}
+.prose-chat pre {
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 0.85em 0;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+.prose-chat hr {
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+  margin: 1em 0;
+}
+
+/* ============================================================
+   GitHub-style Markdown prose overrides (for Artifact Viewer)
+   ============================================================ */
+.prose-github {
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+.prose-github > * {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.prose-github h1, .prose-github h2, .prose-github h3, .prose-github h4, .prose-github h5, .prose-github h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.prose-github h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
+.prose-github h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
+.prose-github h3 { font-size: 1.25em; }
+.prose-github h4 { font-size: 1em; }
+.prose-github p { margin-top: 0; margin-bottom: 16px; }
+.prose-github blockquote {
+  padding: 0 1em;
+  color: color-mix(in srgb, var(--text) 65%, transparent);
+  border-left: 0.25em solid color-mix(in srgb, var(--text) 20%, transparent);
+  margin-bottom: 16px;
+}
+.prose-github ul, .prose-github ol {
+  padding-left: 2em;
+  margin-top: 0;
+  margin-bottom: 16px;
+  list-style-type: disc;
+}
+.prose-github ol {
+  list-style-type: decimal;
+}
+.prose-github li { margin-top: 0.25em; }
+.prose-github li > p { margin-top: 16px; }
+.prose-github table {
+  display: block;
+  width: 100%;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  margin-top: 0;
+  margin-bottom: 16px;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+.prose-github table th, .prose-github table td {
+  padding: 6px 13px;
+  border: 1px solid color-mix(in srgb, var(--text) 20%, transparent);
+}
+.prose-github table tr {
+  background-color: var(--surface);
+  border-top: 1px solid color-mix(in srgb, var(--text) 20%, transparent);
+}
+.prose-github table tr:nth-child(2n) {
+  background-color: color-mix(in srgb, var(--surface) 50%, var(--surface-2));
+}
+.prose-github img {
+  max-width: 100%;
+  box-sizing: content-box;
+  background-color: var(--surface);
+}
+.prose-github hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background-color: color-mix(in srgb, var(--text) 20%, transparent);
+  border: 0;
+}
+.prose-github :not(pre) > code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  white-space: break-spaces;
+  background-color: color-mix(in srgb, var(--text) 15%, transparent);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+}
+.prose-github pre {
+  margin-bottom: 16px;
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--canvas) 50%, var(--surface-2));
+  padding: 16px;
+  overflow: auto;
+}
+.prose-github pre > code {
+  font-size: 85%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  white-space: pre;
+  word-break: normal;
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.7; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.cursor-blink::after {
+  content: "▋";
+  display: inline-block;
+  animation: blink 1s step-end infinite;
+  margin-left: 1px;
+  color: color-mix(in srgb, var(--text) 60%, transparent);
+}
+
+/* Skeleton shimmer base */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface) 0%,
+    var(--surface-2) 40%,
+    color-mix(in srgb, var(--text) 6%, var(--surface)) 50%,
+    var(--surface-2) 60%,
+    var(--surface) 100%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.8s infinite linear;
+}
