@@ -354,7 +354,13 @@ export default function ChatBox({
           </div>
         ) : messages.length === 0 ? (
           <div className="chatbox-empty">
-            {namespace ? (
+            {error ? (
+              <div style={{ color: '#ff4d4f', padding: '16px', background: 'rgba(255, 77, 79, 0.1)', borderRadius: '8px', border: '1px solid rgba(255, 77, 79, 0.2)', maxWidth: '400px', margin: '0 auto', textAlign: 'center' }}>
+                <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>⚠️ Ingestion Failed</p>
+                <p style={{ fontSize: '14px', opacity: 0.9 }}>{error}</p>
+                <p style={{ fontSize: '12px', opacity: 0.7, marginTop: '8px' }}>Please try again or check your API keys.</p>
+              </div>
+            ) : namespace ? (
               <>
                 <div className="chatbox-ready-icon">✓</div>
                 <p className="chatbox-ready-title">Repository indexed!</p>
