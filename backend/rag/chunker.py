@@ -52,12 +52,14 @@ def chunk_file(filename: str, content: str, extension: str) -> list[CodeChunk]:
             language=language,
             chunk_size=_CHUNK_SIZE,
             chunk_overlap=_CHUNK_OVERLAP,
+            strip_whitespace=False,
         )
     else:
         # Fallback for HTML, Markdown, Go, Rust, etc.
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=_CHUNK_SIZE,
             chunk_overlap=_CHUNK_OVERLAP,
+            strip_whitespace=False,
         )
 
     raw_chunks: list[str] = splitter.split_text(content)
