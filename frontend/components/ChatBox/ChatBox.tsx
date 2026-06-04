@@ -404,7 +404,7 @@ export default function ChatBox({
       {messagesUsed >= messageLimit && (
         <div className="premium-upgrade-banner">
           <p className="premium-title">🔒 Account limit reached</p>
-          {messageLimit > 5 ? (
+          {showFunnyPopup ? (
             <div className="premium-funny-popup">
               <p>You thought I could build a RAG and leave a bug 😄</p>
               <p style={{ opacity: 0.8, fontSize: "13px", marginTop: "4px" }}>Stay tuned devs more limits coming soon 😉</p>

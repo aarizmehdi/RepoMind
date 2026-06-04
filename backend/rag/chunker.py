@@ -71,13 +71,16 @@ def chunk_file(filename: str, content: str, extension: str) -> list[CodeChunk]:
         # Find where this chunk starts in the original content.
         idx = content.find(raw, cursor)
         if idx == -1:
-            # Fallback: use current cursor position.
-            idx = cursor
+            # Fallback: search from the beginning of the file (in case whitespace stripping messed up the cursor)
+            idx = content.find(raw, 0)
+            if idx == -1:
+                # Absolute fallback if LangChain heavily modified the chunk (rare)
+                idx = cursor
 
         start_line = content[:idx].count("\n") + 1
         chunks.append(CodeChunk(filename=filename, code=raw, start_line=start_line))
 
-        # Advance cursor to end of this chunk (minus overlap so we don't skip).
-        cursor = max(cursor, idx + len(raw) - _CHUNK_OVERLAP)
+        # Advance cursor to just past the start of this chunk so we don't miss overlapping chunks
+        cursor = idx + 1
 
     return chunks
