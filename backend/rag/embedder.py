@@ -11,7 +11,7 @@ import urllib.request
 import urllib.error
 
 _MODEL_ID = "BAAI/bge-small-en-v1.5"
-_HF_API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{_MODEL_ID}"
+_HF_API_URL = f"https://router.huggingface.co/hf-inference/models/{_MODEL_ID}"
 
 
 def embed(texts: list[str]) -> list[list[float]]:
