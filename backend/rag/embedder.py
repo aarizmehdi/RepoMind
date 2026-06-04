@@ -1,63 +1,55 @@
 """
-Local Embedder
+Cloud Embedder
 Generates dense vector embeddings using BAAI/bge-small-en-v1.5 via
-sentence-transformers. The model is loaded once at import time (singleton).
-All embedding computation runs locally — zero external API cost.
+HuggingFace Inference API. This keeps memory usage near zero to prevent OOM errors.
 """
 
-from sentence_transformers import SentenceTransformer
+import os
+import httpx
 
-# Singleton model instance — loaded once, reused for all requests.
-_MODEL_NAME: str = "BAAI/bge-small-en-v1.5"
-_model: SentenceTransformer | None = None
-
-
-def _get_model() -> SentenceTransformer:
-    """Lazy-initializes and returns the singleton SentenceTransformer model."""
-    global _model
-    if _model is None:
-        _model = SentenceTransformer(_MODEL_NAME)
-    return _model
+_MODEL_ID = "BAAI/bge-small-en-v1.5"
+_HF_API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{_MODEL_ID}"
 
 
 def embed(texts: list[str]) -> list[list[float]]:
     """
-    Generates normalized embeddings for a list of text strings.
-
-    Args:
-        texts: A list of raw text strings to embed (code chunks or queries).
-
-    Returns:
-        A list of float vectors, one per input text.
-        Each vector has dimension 384 (BAAI/bge-small-en-v1.5 output size).
-
-    Raises:
-        RuntimeError: If the model fails to load or encode.
+    Generates embeddings for a list of text strings via HuggingFace API.
+    Returns: A list of float vectors, one per input text. Dimension 384.
     """
     if not texts:
         return []
 
-    model = _get_model()
-    # normalize_embeddings=True ensures cosine similarity == dot product,
-    # which is required for the anti-hallucination filter in chat.py.
-    embeddings = model.encode(
-        texts,
-        normalize_embeddings=True,
-        show_progress_bar=False,
-        batch_size=64,
-    )
-    return [vec.tolist() for vec in embeddings]
+    hf_token = os.getenv("HUGGINGFACE_API_KEY")
+    if not hf_token:
+        raise RuntimeError("HUGGINGFACE_API_KEY environment variable is missing. Add it to Render!")
+
+    headers = {"Authorization": f"Bearer {hf_token}"}
+    payload = {"inputs": texts, "options": {"wait_for_model": True}}
+
+    try:
+        with httpx.Client(timeout=60.0) as client:
+            response = client.post(_HF_API_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            embeddings = response.json()
+            
+            # Hugging Face feature-extraction returns a list of floats for a single string, 
+            # and a list of lists of floats for a list of strings.
+            if not isinstance(embeddings, list):
+                raise RuntimeError(f"Unexpected HF response: {embeddings}")
+            
+            # If a single string was passed, wrap it back in a list so the return type is consistent
+            if isinstance(embeddings[0], float):
+                return [embeddings]
+            
+            return embeddings
+    except Exception as e:
+        raise RuntimeError(f"HuggingFace embedding failed: {e}")
 
 
 def embed_single(text: str) -> list[float]:
     """
     Convenience wrapper to embed a single string.
-
-    Args:
-        text: A single text string.
-
-    Returns:
-        A single float vector of dimension 384.
+    Returns: A single float vector of dimension 384.
     """
     result = embed([text])
     return result[0]
