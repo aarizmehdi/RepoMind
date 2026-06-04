@@ -155,7 +155,7 @@ export default function DashboardPage() {
         
         // Post-Ingest Hook: Automatically trigger the architectural overview.
         setTimeout(() => {
-          handleSendMessage("Generate a brief 3-sentence architectural overview of this repository.");
+          handleSendMessage("Generate a brief 3-sentence architectural overview of this repository.", result.namespace);
         }, 500);
       } catch (err) {
         setError(`Ingestion failed: ${(err as Error).message}`);
@@ -180,9 +180,11 @@ export default function DashboardPage() {
     }
   }, [sidebarRepos, loadRepository, handleIngest]);
   const handleSendMessage = useCallback(
-    async (query: string) => {
+    async (query: string, currentNamespace?: string) => {
       if (streaming || !query.trim()) return;
-      if (!namespace) {
+      
+      const targetNamespace = currentNamespace || namespace;
+      if (!targetNamespace) {
         setError("Please ingest a repository first.");
         return;
       }
@@ -218,7 +220,7 @@ export default function DashboardPage() {
 
       await streamChat(
         query,
-        namespace,
+        targetNamespace,
         (token) => {
           streamBufferRef.current += token;
           
