@@ -1,11 +1,14 @@
 """
 Cloud Embedder
 Generates dense vector embeddings using BAAI/bge-small-en-v1.5 via
-HuggingFace Inference API. This keeps memory usage near zero to prevent OOM errors.
+HuggingFace Inference API. Uses urllib for rock-solid DNS resolution in Docker.
 """
 
 import os
-import httpx
+import json
+import time
+import urllib.request
+import urllib.error
 
 _MODEL_ID = "BAAI/bge-small-en-v1.5"
 _HF_API_URL = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{_MODEL_ID}"
@@ -23,22 +26,21 @@ def embed(texts: list[str]) -> list[list[float]]:
     if not hf_token:
         raise RuntimeError("HUGGINGFACE_API_KEY environment variable is missing. Add it to Render!")
 
-    import time
-
-    headers = {"Authorization": f"Bearer {hf_token}"}
-    payload = {"inputs": texts, "options": {"wait_for_model": True}}
+    headers = {
+        "Authorization": f"Bearer {hf_token}",
+        "Content-Type": "application/json"
+    }
+    
+    payload_dict = {"inputs": texts, "options": {"wait_for_model": True}}
+    data = json.dumps(payload_dict).encode("utf-8")
+    req = urllib.request.Request(_HF_API_URL, data=data, headers=headers, method="POST")
 
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            with httpx.Client(timeout=60.0) as client:
-                response = client.post(_HF_API_URL, headers=headers, json=payload)
-                if response.status_code == 503:
-                    # Model loading, wait and retry
-                    time.sleep(2 ** attempt)
-                    continue
-                response.raise_for_status()
-                embeddings = response.json()
+            with urllib.request.urlopen(req, timeout=60.0) as response:
+                response_data = response.read().decode("utf-8")
+                embeddings = json.loads(response_data)
                 
                 if not isinstance(embeddings, list):
                     raise RuntimeError(f"Unexpected HF response: {embeddings}")
@@ -47,6 +49,15 @@ def embed(texts: list[str]) -> list[list[float]]:
                     return [embeddings]
                 
                 return embeddings
+        except urllib.error.HTTPError as e:
+            if e.code == 503:
+                # Model loading, wait and retry
+                time.sleep(2 ** attempt)
+                continue
+            if attempt == max_retries - 1:
+                error_body = e.read().decode("utf-8")
+                raise RuntimeError(f"HuggingFace embedding failed (HTTP {e.code}): {error_body}")
+            time.sleep(2 ** attempt)
         except Exception as e:
             if attempt == max_retries - 1:
                 raise RuntimeError(f"HuggingFace embedding failed after {max_retries} attempts: {e}")
