@@ -60,6 +60,7 @@ def _build_system_prompt(snippets: list[dict]) -> str:
     """
     Constructs a grounded system prompt from filtered Pinecone results.
     The LLM is strictly instructed to answer only from the provided context.
+    """
     context_blocks = []
     for i, snippet in enumerate(snippets, start=1):
         meta = snippet.metadata or {}
