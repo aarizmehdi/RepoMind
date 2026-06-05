@@ -60,15 +60,21 @@ def _build_system_prompt(snippets: list[dict]) -> str:
     """
     Constructs a grounded system prompt from filtered Pinecone results.
     The LLM is strictly instructed to answer only from the provided context.
-    """
     context_blocks = []
     for i, snippet in enumerate(snippets, start=1):
         meta = snippet.metadata or {}
         filename = meta.get("filename", "unknown")
         start_line = meta.get("start_line", 0)
         code = meta.get("code", "")
+        
+        # Prepend line numbers to every line so the LLM doesn't have to mathematically guess
+        numbered_lines = []
+        for line_idx, line in enumerate(code.split("\n")):
+            numbered_lines.append(f"{start_line + line_idx}: {line}")
+        numbered_code = "\n".join(numbered_lines)
+
         context_blocks.append(
-            f"### Snippet {i} — {filename} (line {start_line})\n```\n{code}\n```"
+            f"### Snippet {i} — {filename}\n```\n{numbered_code}\n```"
         )
 
     formatted_context = "\n\n".join(context_blocks)
