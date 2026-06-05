@@ -55,17 +55,12 @@ function inferLanguage(filename: string): string {
 // ---------------------------------------------------------------------------
 // Helper: clean code snippet (remove markdown backticks)
 // ---------------------------------------------------------------------------
-function cleanCodeBlock(code: string): { cleaned: string; newlinesTrimmed: number } {
-  if (!code) return { cleaned: "", newlinesTrimmed: 0 };
-  
-  const leadingMatch = code.match(/^\s*/);
-  const newlinesTrimmed = leadingMatch ? leadingMatch[0].split("\n").length - 1 : 0;
-  
+function cleanCodeBlock(code: string): string {
+  if (!code) return "";
   let cleaned = code.trim();
   cleaned = cleaned.replace(/^```[a-zA-Z]*\r?\n/i, "");
   cleaned = cleaned.replace(/\r?\n```$/i, "");
-  
-  return { cleaned, newlinesTrimmed };
+  return cleaned;
 }
 
 // ---------------------------------------------------------------------------
@@ -111,9 +106,8 @@ function EvidenceCard({ block, index, repoUrl, onExplain }: EvidenceCardProps) {
     ? block.filename.substring(0, block.filename.lastIndexOf("/") + 1)
     : "";
 
-  const { cleaned: cleanedCode, newlinesTrimmed } = cleanCodeBlock(block.code);
+  const cleanedCode = cleanCodeBlock(block.code);
   const codeLinesCount = cleanedCode.split('\n').length;
-  const actualStartLine = block.start_line !== undefined ? block.start_line + newlinesTrimmed : undefined;
 
   function handleCopy() {
     navigator.clipboard.writeText(cleanedCode).then(() => {
@@ -123,12 +117,12 @@ function EvidenceCard({ block, index, repoUrl, onExplain }: EvidenceCardProps) {
   }
 
   function handleViewGitHub() {
-    const url = buildGitHubUrl(repoUrl, block.filename, actualStartLine, codeLinesCount);
+    const url = buildGitHubUrl(repoUrl, block.filename, block.start_line, codeLinesCount);
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
   function handleExplain() {
-    onExplain(block.filename, actualStartLine ?? 1, cleanedCode);
+    onExplain(block.filename, block.start_line ?? 1, cleanedCode);
   }
 
   return (
@@ -146,8 +140,8 @@ function EvidenceCard({ block, index, repoUrl, onExplain }: EvidenceCardProps) {
           {dirPath && <span className="ev-dir-path">{dirPath}</span>}
           <span className="ev-file-name">{shortName}</span>
         </div>
-        {actualStartLine !== undefined && (
-          <span className="ev-line-badge">L{actualStartLine}</span>
+        {block.start_line !== undefined && (
+          <span className="ev-line-badge">L{block.start_line}</span>
         )}
         {block.score !== undefined && (
           <span
@@ -208,7 +202,7 @@ function EvidenceCard({ block, index, repoUrl, onExplain }: EvidenceCardProps) {
             fontFamily: "var(--font-mono)",
           }}
           showLineNumbers
-          startingLineNumber={actualStartLine ?? 1}
+          startingLineNumber={block.start_line ?? 1}
           wrapLongLines={false}
         >
           {cleanedCode}
@@ -232,9 +226,7 @@ interface ArtifactCardProps {
 
 function ArtifactCard({ type, title, content, repoUrl, startLine, onExplain }: ArtifactCardProps) {
   const [copied, setCopied] = useState(false);
-  const cleanedContentObj = type === "markdown" ? { cleaned: content, newlinesTrimmed: 0 } : cleanCodeBlock(content);
-  const cleanedContent = cleanedContentObj.cleaned;
-  const actualStartLine = startLine !== undefined ? startLine + cleanedContentObj.newlinesTrimmed : undefined;
+  const cleanedContent = type === "markdown" ? content : cleanCodeBlock(content);
   const baseFilename = title.split(" - ")[0].trim();
 
   const handleCopy = () => {
@@ -256,17 +248,17 @@ function ArtifactCard({ type, title, content, repoUrl, startLine, onExplain }: A
   const handleViewGitHub = () => {
     if (!repoUrl) return;
     const url = repoUrl.replace(/\/$/, "");
-    if (actualStartLine !== undefined) {
+    if (startLine !== undefined) {
       const codeLinesCount = cleanedContent.split('\n').length;
-      const endLine = actualStartLine + codeLinesCount - 1;
-      window.open(`${url}/blob/main/${baseFilename}#L${actualStartLine}-L${endLine}`, "_blank");
+      const endLine = startLine + codeLinesCount - 1;
+      window.open(`${url}/blob/main/${baseFilename}#L${startLine}-L${endLine}`, "_blank");
     } else {
       window.open(`${url}/blob/main/${baseFilename}`, "_blank");
     }
   };
 
   const handleExplain = () => {
-    onExplain(baseFilename, actualStartLine ?? 1, cleanedContent);
+    onExplain(baseFilename, startLine ?? 1, cleanedContent);
   };
 
   const isError = type === "error";
@@ -386,8 +378,8 @@ function ArtifactCard({ type, title, content, repoUrl, startLine, onExplain }: A
             lineHeight: "1.7",
             fontFamily: "var(--font-mono)",
           }}
-          showLineNumbers={actualStartLine !== undefined}
-          startingLineNumber={actualStartLine ?? 1}
+          showLineNumbers={startLine !== undefined}
+          startingLineNumber={startLine ?? 1}
           wrapLongLines={false}
         >
           {cleanedContent}
