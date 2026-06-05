@@ -208,7 +208,7 @@ function EvidenceCard({ block, index, repoUrl, onExplain }: EvidenceCardProps) {
             fontFamily: "var(--font-mono)",
           }}
           showLineNumbers
-          startingLineNumber={block.start_line ?? 1}
+          startingLineNumber={actualStartLine ?? 1}
           wrapLongLines={false}
         >
           {cleanedCode}
@@ -386,8 +386,8 @@ function ArtifactCard({ type, title, content, repoUrl, startLine, onExplain }: A
             lineHeight: "1.7",
             fontFamily: "var(--font-mono)",
           }}
-          showLineNumbers={startLine !== undefined}
-          startingLineNumber={startLine ?? 1}
+          showLineNumbers={actualStartLine !== undefined}
+          startingLineNumber={actualStartLine ?? 1}
           wrapLongLines={false}
         >
           {cleanedContent}
