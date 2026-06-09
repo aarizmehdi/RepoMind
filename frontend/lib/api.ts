@@ -33,10 +33,6 @@ export async function ingestRepository(
 ): Promise<IngestResponse> {
   const idToken = await getIdToken();
 
-  // 15-minute timeout — embedding large repos on CPU or through retries can take a while.
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000);
-
   try {
     const res = await fetch(`${BACKEND_URL}/ingest`, {
       method: "POST",
@@ -45,7 +41,6 @@ export async function ingestRepository(
         Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({ repo_url: repoUrl, github_token: githubToken }),
-      signal: controller.signal,
     });
 
     if (!res.ok) {
@@ -55,12 +50,7 @@ export async function ingestRepository(
 
     return res.json() as Promise<IngestResponse>;
   } catch (e) {
-    if ((e as Error).name === "AbortError") {
-      throw new Error("Ingestion timed out — the repository may be too large or the server is busy.");
-    }
     throw e;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
