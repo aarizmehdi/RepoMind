@@ -59,7 +59,7 @@ _SUPPORTED_EXTENSIONS: frozenset[str] = frozenset({
     ".rb", ".php", ".swift", ".dart",
     # Web
     ".html", ".htm", ".css", ".scss", ".sass", ".less", ".svelte", ".vue",
-    # Data / Config
+    # Data / Config (Only small configs, no huge JSONs)
     ".json", ".yaml", ".yml", ".toml", ".xml", ".env",
     # Shell / Scripts
     ".sh", ".bash", ".zsh", ".ps1", ".bat",
@@ -69,6 +69,15 @@ _SUPPORTED_EXTENSIONS: frozenset[str] = frozenset({
     ".sql", ".graphql", ".gql",
     # Other
     ".lua", ".r", ".m", ".ex", ".exs",
+})
+
+# ---------------------------------------------------------------------------
+# Files strictly ignored (Lockfiles, generated minified files, etc.)
+# ---------------------------------------------------------------------------
+_EXCLUDED_FILES: frozenset[str] = frozenset({
+    "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb",
+    "poetry.lock", "Gemfile.lock", "Cargo.lock", "composer.lock",
+    "requirements.txt"  # Sometimes huge, rarely useful for logic
 })
 
 # Pinecone upsert batch size. Lowered to 16 to avoid HuggingFace Serverless API payload limits.
@@ -265,11 +274,14 @@ async def ingest_repository(
             # 2. Fetch full recursive file tree.
             tree_entries = await _get_repo_tree(client, owner, repo, branch, github_headers)
 
-            # 3. Filter to supported extensions.
+            # 3. Filter to supported extensions and exclude massive generated files.
             supported_entries = [
                 entry
                 for entry in tree_entries
                 if any(entry["path"].endswith(ext) for ext in _SUPPORTED_EXTENSIONS)
+                and entry["path"].split("/")[-1] not in _EXCLUDED_FILES
+                and not entry["path"].endswith(".min.js")
+                and not entry["path"].endswith(".min.css")
             ]
 
             if not supported_entries:
