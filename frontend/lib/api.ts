@@ -33,9 +33,9 @@ export async function ingestRepository(
 ): Promise<IngestResponse> {
   const idToken = await getIdToken();
 
-  // 5-minute timeout — embedding large repos on CPU can be slow.
+  // 15-minute timeout — embedding large repos on CPU or through retries can take a while.
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+  const timeoutId = setTimeout(() => controller.abort(), 15 * 60 * 1000);
 
   try {
     const res = await fetch(`${BACKEND_URL}/ingest`, {
