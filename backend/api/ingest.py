@@ -186,7 +186,17 @@ def _upsert_chunks_to_pinecone(
     for batch_start in range(0, len(chunks), _UPSERT_BATCH_SIZE):
         batch = chunks[batch_start : batch_start + _UPSERT_BATCH_SIZE]
         texts = [c.code for c in batch]
-        vectors = embed(texts)
+        
+        try:
+            vectors = embed(texts)
+        except Exception as exc:
+            # Fault-Tolerant: Log the error and skip this specific batch without crashing everything
+            print(f"[Warning] Failed to embed a batch of {len(batch)} chunks: {exc}")
+            continue
+
+        if not vectors or len(vectors) != len(batch):
+            print(f"[Warning] Expected {len(batch)} vectors but got {len(vectors) if vectors else 0}")
+            continue
 
         records = [
             {
@@ -201,8 +211,12 @@ def _upsert_chunks_to_pinecone(
             for i in range(len(batch))
         ]
 
-        _index.upsert(vectors=records, namespace=namespace)
-        total_upserted += len(records)
+        try:
+            _index.upsert(vectors=records, namespace=namespace)
+            total_upserted += len(records)
+        except Exception as exc:
+            print(f"[Warning] Pinecone upsert failed for batch: {exc}")
+            continue
 
     return total_upserted
 
@@ -240,7 +254,7 @@ async def ingest_repository(
         # 0. Wipe existing namespace to prevent ghost chunks on re-sync
         try:
             await asyncio.to_thread(_index.delete, delete_all=True, namespace=namespace)
-            await asyncio.sleep(2)  # Give Pinecone backend time to process the deletion
+            await asyncio.sleep(5)  # 5.0 seconds safety buffer for Pinecone eventual consistency
         except Exception:
             pass  # Ignored if namespace doesn't exist yet
 
@@ -267,12 +281,17 @@ async def ingest_repository(
                     ),
                 )
 
-            # 4. Download ALL files concurrently — this is the main speedup.
-            #    asyncio.gather fires all HTTP requests at once instead of one-by-one.
+            # 4. Download ALL files in batches of 50 to prevent OOM and connection pool exhaustion
             paths = [e["path"] for e in supported_entries]
-            contents = await asyncio.gather(
-                *[_download_file(client, owner, repo, p, github_headers) for p in paths]
-            )
+            contents = []
+            _DOWNLOAD_BATCH_SIZE = 50
+            
+            for i in range(0, len(paths), _DOWNLOAD_BATCH_SIZE):
+                batch_paths = paths[i : i + _DOWNLOAD_BATCH_SIZE]
+                batch_contents = await asyncio.gather(
+                    *[_download_file(client, owner, repo, p, github_headers) for p in batch_paths]
+                )
+                contents.extend(batch_contents)
 
             # 5. Chunk each file (CPU-bound, but fast for small repos).
             for path, content in zip(paths, contents):

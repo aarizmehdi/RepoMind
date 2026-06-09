@@ -44,6 +44,9 @@ export async function ingestRepository(
     });
 
     if (!res.ok) {
+      if (res.status === 502 || res.status === 504) {
+        throw new Error("The repository is very large. The server connection timed out, but indexing is likely continuing in the background. Please wait a few minutes and try chatting.");
+      }
       const err = await res.json().catch(() => ({ detail: res.statusText }));
       throw new Error((err as { detail: string }).detail ?? "Ingestion failed.");
     }
